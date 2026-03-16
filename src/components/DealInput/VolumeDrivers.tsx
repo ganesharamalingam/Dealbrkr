@@ -21,8 +21,9 @@ export function VolumeDrivers({ categories, contractMonths, projectDurationWeeks
   })
 
   const grandTotal = rows.reduce((s, r) => s + r.totalHours, 0)
+  const weeks = projectDurationWeeks ?? 26
   const durationLabel = projectBased
-    ? `${projectDurationWeeks}wk project`
+    ? `${weeks}wk project`
     : `${contractMonths}mo`
 
   return (
