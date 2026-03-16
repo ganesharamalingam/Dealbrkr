@@ -10,7 +10,10 @@ import * as XLSX from 'xlsx'
 async function extractFromPDF(file: File): Promise<string> {
   const pdfjs = await import('pdfjs-dist')
   // Use CDN worker to avoid bundler complications with large worker files
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).href
 
   const arrayBuffer = await file.arrayBuffer()
   const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
