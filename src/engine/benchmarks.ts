@@ -84,21 +84,40 @@ export const VOLUME_UNITS = [
 ]
 
 export const ROLE_OPTIONS = [
+  // General engineering
   'Analyst',
   'Engineer',
   'Senior Engineer',
+  'Lead Engineer',
   'Architect',
-  'DevOps Engineer',
+  'Solution Architect',
+  // AI / Data
+  'Data Scientist',
+  'Senior Data Scientist',
+  'ML Engineer',
+  'Data Engineer',
+  'AI/ML Researcher',
+  // Quality & Testing
   'QA Engineer',
+  'Test Lead',
+  // Operations
+  'DevOps Engineer',
+  'Platform Engineer',
+  'Site Reliability Engineer',
+  'Network Engineer',
+  'DBA',
+  'Security Analyst',
+  // Domain / Clinical
+  'Clinical Informatics Specialist',
+  'Business Analyst',
+  // Management
   'Project Manager',
   'Delivery Manager',
-  'Security Analyst',
-  'DBA',
-  'Network Engineer',
-  'Support Lead',
   'Scrum Master',
-  'Business Analyst',
+  'Support Lead',
+  // Other
   'Technical Writer',
+  'UX Designer',
 ]
 
 export const GLIDEPATH_RAMP: Record<string, { y1: number; y2: number; y3: number }> = {

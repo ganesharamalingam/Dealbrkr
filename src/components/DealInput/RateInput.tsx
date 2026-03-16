@@ -1,4 +1,4 @@
-import { DealInput } from '../../types/deal'
+import { DealInput, isProjectBased } from '../../types/deal'
 import { Input } from '../shared/Input'
 import { Select } from '../shared/Select'
 
@@ -16,6 +16,8 @@ const currencyOptions = [
 ]
 
 export function RateInput({ input, onChange }: Props) {
+  const projectBased = isProjectBased(input.scenario_type)
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -41,29 +43,45 @@ export function RateInput({ input, onChange }: Props) {
           min={0}
           value={input.revenue_proposed || ''}
           onChange={e => onChange({ revenue_proposed: parseFloat(e.target.value) || undefined })}
-          placeholder="Optional — enables margin calc"
-          hint="Full contract revenue"
+          placeholder="Optional — enables margin"
+          hint="Full contract / project revenue"
         />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <Input
-          label="Contract Term (months)"
-          type="number"
-          min={1}
-          max={120}
-          value={input.contract_term_months}
-          onChange={e => onChange({ contract_term_months: parseInt(e.target.value) || 36 })}
-        />
-        <Input
-          label="SLA Coverage (hrs/day)"
-          type="number"
-          min={1}
-          max={24}
-          value={input.sla_coverage_hours}
-          onChange={e => onChange({ sla_coverage_hours: parseInt(e.target.value) || 12 })}
-          hint="8=business hrs, 12=extended, 24=24×7"
-        />
+        {projectBased ? (
+          <Input
+            label="Project Duration (weeks)"
+            type="number"
+            min={1}
+            max={520}
+            value={input.project_duration_weeks}
+            onChange={e => onChange({ project_duration_weeks: parseInt(e.target.value) || 26 })}
+            hint="Total fixed-scope timeline"
+          />
+        ) : (
+          <Input
+            label="Contract Term (months)"
+            type="number"
+            min={1}
+            max={120}
+            value={input.contract_term_months}
+            onChange={e => onChange({ contract_term_months: parseInt(e.target.value) || 36 })}
+          />
+        )}
+
+        {!projectBased && (
+          <Input
+            label="SLA Coverage (hrs/day)"
+            type="number"
+            min={1}
+            max={24}
+            value={input.sla_coverage_hours}
+            onChange={e => onChange({ sla_coverage_hours: parseInt(e.target.value) || 12 })}
+            hint="8=business hrs, 12=extended, 24=24×7"
+          />
+        )}
+
         <Input
           label="FTE Annual Hours"
           type="number"

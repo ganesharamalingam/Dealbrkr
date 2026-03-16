@@ -92,6 +92,7 @@ export function RawRFPInput({ rfpText, onRFPTextChange, onApply }: Props) {
         blended_rate: result.blended_rate,
         revenue_proposed: result.revenue,
         contract_term_months: result.contract_months,
+        project_duration_weeks: result.project_duration_weeks,
       })
       setParsed(true)
     } catch {

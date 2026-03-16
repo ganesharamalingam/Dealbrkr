@@ -112,6 +112,8 @@ export function DealInputForm({ input, onUpdate, onEstimate, onReset, error }: P
               <VolumeDrivers
                 categories={input.work_categories}
                 contractMonths={input.contract_term_months}
+                projectDurationWeeks={input.project_duration_weeks}
+                scenarioType={input.scenario_type}
               />
             </Card>
           )}

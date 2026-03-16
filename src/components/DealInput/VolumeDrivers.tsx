@@ -1,22 +1,29 @@
-import { WorkCategory } from '../../types/deal'
+import { WorkCategory, ScenarioType, isProjectBased } from '../../types/deal'
 import { COMPLEXITY_MULTIPLIERS } from '../../engine/benchmarks'
 
 interface Props {
   categories: WorkCategory[]
   contractMonths: number
+  projectDurationWeeks: number
+  scenarioType: ScenarioType
 }
 
-export function VolumeDrivers({ categories, contractMonths }: Props) {
+export function VolumeDrivers({ categories, contractMonths, projectDurationWeeks, scenarioType }: Props) {
   if (categories.length === 0) return null
+
+  const projectBased = isProjectBased(scenarioType)
 
   const rows = categories.map(cat => {
     const mult = COMPLEXITY_MULTIPLIERS[cat.complexity]
-    const monthlyHours = cat.volume * cat.aht_hours * mult
-    const totalHours = monthlyHours * contractMonths
-    return { cat, monthlyHours, totalHours }
+    const baseHours = cat.volume * cat.aht_hours * mult
+    const totalHours = projectBased ? baseHours : baseHours * contractMonths
+    return { cat, baseHours, totalHours }
   })
 
   const grandTotal = rows.reduce((s, r) => s + r.totalHours, 0)
+  const durationLabel = projectBased
+    ? `${projectDurationWeeks}wk project`
+    : `${contractMonths}mo`
 
   return (
     <div className="overflow-x-auto">
@@ -27,12 +34,13 @@ export function VolumeDrivers({ categories, contractMonths }: Props) {
             <th className="text-right py-2 px-2 text-ink-3 font-medium">Volume</th>
             <th className="text-right py-2 px-2 text-ink-3 font-medium">AHT</th>
             <th className="text-right py-2 px-2 text-ink-3 font-medium">Complexity</th>
-            <th className="text-right py-2 px-2 text-ink-3 font-medium">Mo. Hrs</th>
-            <th className="text-right py-2 pl-2 text-ink-3 font-medium">Total Hrs</th>
+            <th className="text-right py-2 pl-2 text-ink-3 font-medium">
+              {projectBased ? 'Total Hrs' : 'Mo. Hrs / Total Hrs'}
+            </th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ cat, monthlyHours, totalHours }) => (
+          {rows.map(({ cat, baseHours, totalHours }) => (
             <tr key={cat.id} className="border-b border-surface-2 hover:bg-surface-1">
               <td className="py-1.5 pr-3 text-ink-1 font-medium truncate max-w-[140px]">
                 {cat.name || <span className="text-ink-4 italic">Unnamed</span>}
@@ -50,17 +58,19 @@ export function VolumeDrivers({ categories, contractMonths }: Props) {
                   {cat.complexity}
                 </span>
               </td>
-              <td className="py-1.5 px-2 text-right text-ink-2 font-mono">{monthlyHours.toFixed(0)}</td>
               <td className="py-1.5 pl-2 text-right text-ink-1 font-mono font-semibold">
-                {totalHours.toFixed(0)}
+                {projectBased
+                  ? totalHours.toFixed(0)
+                  : <>{baseHours.toFixed(0)} <span className="text-ink-4">/ {totalHours.toFixed(0)}</span></>
+                }
               </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={5} className="py-2 pr-2 text-right text-xs font-semibold text-ink-2">
-              Total Pre-AI Hours ({contractMonths}mo)
+            <td colSpan={4} className="py-2 pr-2 text-right text-xs font-semibold text-ink-2">
+              Total Pre-AI Hours ({durationLabel})
             </td>
             <td className="py-2 pl-2 text-right text-sm font-bold text-brand-700 font-mono">
               {grandTotal.toFixed(0)}

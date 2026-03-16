@@ -4,7 +4,7 @@
 
 import {
   DealInput, DealOutput, EffortEstimate, CommercialEstimate,
-  CategoryEffort, SensitivityDriver, ConfidenceLevel
+  CategoryEffort, SensitivityDriver, ConfidenceLevel, isProjectBased
 } from '../types/deal'
 import { COMPLEXITY_MULTIPLIERS, DEFAULT_BLENDED_RATES } from './benchmarks'
 import { calculateAICompression } from './aiCompression'
@@ -14,13 +14,20 @@ import { collectAssumptions } from './assumptions'
 export function runEstimation(input: DealInput): DealOutput {
   const blendedRate = input.blended_rate || DEFAULT_BLENDED_RATES[input.currency] || 65
   const fteHours = input.fte_annual_hours || 1920
-  const contractYears = input.contract_term_months / 12
+  const projectBased = isProjectBased(input.scenario_type)
+
+  // For managed services: effort recurs monthly over contract term
+  // For project-based: volume × AHT is the total fixed effort (not recurring)
+  const contractYears = projectBased
+    ? (input.project_duration_weeks || 26) / 52
+    : input.contract_term_months / 12
 
   // 1. Calculate effort per category
   const categoryEfforts: CategoryEffort[] = input.work_categories.map(wc => {
     const complexityMult = COMPLEXITY_MULTIPLIERS[wc.complexity]
-    const monthlyHours = wc.volume * wc.aht_hours * complexityMult
-    const totalHours = monthlyHours * input.contract_term_months
+    const totalHours = projectBased
+      ? wc.volume * wc.aht_hours * complexityMult                          // fixed scope: total effort
+      : wc.volume * wc.aht_hours * complexityMult * input.contract_term_months // recurring: per month × months
 
     // Get AI compression for this category
     const catCompression = calculateAICompression([wc]).by_category[0]
@@ -52,7 +59,8 @@ export function runEstimation(input: DealInput): DealOutput {
   const postAIHoursExpected = totalPreAIHours * (1 - aiCompression.expected_percent / 100)
   const postAIHoursMax = totalPreAIHours * (1 - aiCompression.max_percent / 100)
 
-  const annualPreAIHours = totalPreAIHours / contractYears
+  // For project-based: "annual" is used only for FTE calc denominator — spread effort over project duration
+  const annualPreAIHours = totalPreAIHours / (contractYears || 1)
 
   const effortEstimate: EffortEstimate = {
     pre_ai_hours: Math.round(totalPreAIHours),
@@ -118,13 +126,19 @@ export function runEstimation(input: DealInput): DealOutput {
       impact_magnitude: 'medium',
       direction: 'bidirectional',
     },
-    {
+    ...(projectBased ? [{
+      driver: 'Scope Creep (±20%)',
+      current_value: 'Fixed scope',
+      impact_description: `20% scope increase shifts total cost by ~${formatCurrency(costPostAIExpected * 0.2, input.currency)}`,
+      impact_magnitude: 'high' as const,
+      direction: 'cost_increase' as const,
+    }] : [{
       driver: 'SLA Coverage Expansion',
       current_value: `${input.sla_coverage_hours}h/day`,
       impact_description: 'Moving to 24×7 could require additional shift coverage (1.5-2x staffing for overlap)',
-      impact_magnitude: 'medium',
-      direction: 'cost_increase',
-    },
+      impact_magnitude: 'medium' as const,
+      direction: 'cost_increase' as const,
+    }]),
   ]
 
   // 6. Confidence
@@ -142,8 +156,10 @@ export function runEstimation(input: DealInput): DealOutput {
     scope_summary: {
       total_categories: input.work_categories.length,
       total_volume: input.work_categories.reduce((s, c) => s + c.volume, 0),
-      coverage_hours: input.sla_coverage_hours,
-      contract_months: input.contract_term_months,
+      coverage_hours: projectBased ? 0 : input.sla_coverage_hours,
+      contract_months: projectBased
+        ? Math.round((input.project_duration_weeks || 26) / 4.33)
+        : input.contract_term_months,
     },
     effort_estimate: effortEstimate,
     ai_compression: aiCompression,

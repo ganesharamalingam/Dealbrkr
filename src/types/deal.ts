@@ -50,7 +50,10 @@ export interface DealInput {
   work_categories: WorkCategory[]
   blended_rate?: number
   revenue_proposed?: number
+  // managed_services / tm_capacity / hybrid use contract_term_months
   contract_term_months: number
+  // greenfield_implementation / product_feature_development use project_duration_weeks
+  project_duration_weeks: number
   sla_coverage_hours: number
   fte_annual_hours: number
   currency: string
@@ -167,10 +170,21 @@ export function createDefaultDealInput(): DealInput {
     blended_rate: undefined,
     revenue_proposed: undefined,
     contract_term_months: 36,
+    project_duration_weeks: 26,
     sla_coverage_hours: 12,
     fte_annual_hours: 1920,
     currency: 'USD',
   }
+}
+
+// Scenarios where work is project-based (fixed scope, not monthly recurring)
+export const PROJECT_BASED_SCENARIOS: ScenarioType[] = [
+  'greenfield_implementation',
+  'product_feature_development',
+]
+
+export function isProjectBased(scenario: ScenarioType): boolean {
+  return PROJECT_BASED_SCENARIOS.includes(scenario)
 }
 
 export function createDefaultWorkCategory(): WorkCategory {
